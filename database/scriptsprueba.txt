@@ -1,0 +1,105 @@
+-- Insertar 5 usuarios en la tabla Cliente
+INSERT INTO Cliente (Nombre, Apellido, FechaNacimiento, Genero, Direccion, Ciudad, CodigoPostal, Pais, Telefono, CorreoElectronico, TipoCliente, FechaRegistro) VALUES
+('Juan', 'Pérez', '1990-05-15', 'Masculino', 'Calle Principal 123', 'Ciudad A', '12345', 'País A', '123456789', 'juan@example.com', 'Normal', CURRENT_DATE),
+('María', 'Gómez', '1985-09-20', 'Femenino', 'Avenida Central 456', 'Ciudad B', '54321', 'País B', '987654321', 'maria@example.com', 'Normal', CURRENT_DATE),
+('Pedro', 'López', '1978-03-10', 'Masculino', 'Boulevard Sur 789', 'Ciudad C', '67890', 'País C', '456789012', 'pedro@example.com', 'VIP', CURRENT_DATE),
+('Ana', 'Martínez', '1995-07-25', 'Femenino', 'Avenida Norte 234', 'Ciudad D', '09876', 'País D', '321098765', 'ana@example.com', 'Normal', CURRENT_DATE),
+('Carlos', 'Rodríguez', '1980-11-30', 'Masculino', 'Carrera Este 567', 'Ciudad E', '23456', 'País E', '789012345', 'carlos@example.com', 'Normal', CURRENT_DATE);
+
+DO $$
+DECLARE
+    i INT := 1;
+BEGIN
+    WHILE i <= 1000 LOOP
+        INSERT INTO Cliente (Nombre, Apellido, FechaNacimiento, Genero, Direccion, Ciudad, CodigoPostal, Pais, Telefono, CorreoElectronico, TipoCliente, FechaRegistro)
+        VALUES (
+            'Nombre' || i::text,
+            'Apellido' || i::text,
+            '2000-01-01'::DATE + (i || ' days')::INTERVAL, -- Añadir días al 2000-01-01 para simular fechas de nacimiento diferentes
+            CASE WHEN i % 2 = 0 THEN 'Masculino' ELSE 'Femenino' END,
+            'Dirección' || i::text,
+            'Ciudad' || i::text,
+            'CP' || i::text,
+            'País' || i::text,
+            '123456789' || i::text,
+            'correo' || i::text || '@example.com',
+            'Tipo' || i::text,
+            '2000-01-01'::DATE
+        );
+        i := i + 1;
+    END LOOP;
+END $$;
+
+--SCRIPT CUENTA --
+   INSERT INTO Cuenta (IDCliente, TipoCuenta, Moneda, SaldoActual, FechaApertura, Estado)
+VALUES 
+    (1, 'Cuenta de Ahorro', 'USD', 1000.00, '2024-01-01', 'Activo'),
+    (2, 'Cuenta Corriente', 'EUR', 2500.00, '2024-02-15', 'Activo'),
+    (3, 'Cuenta de Ahorro', 'GBP', 1500.00, '2024-03-10', 'Inactivo'),
+    (4, 'Cuenta Corriente', 'USD', 3000.00, '2024-04-20', 'Activo'),
+    (5, 'Cuenta de Ahorro', 'EUR', 2000.00, '2024-05-30', 'Activo');
+
+   
+   
+   DO $$
+DECLARE
+    i INT := 1;
+BEGIN
+    WHILE i <= 10 LOOP
+        INSERT INTO Cuenta (IDCliente, TipoCuenta, Moneda, SaldoActual, FechaApertura, Estado)
+        VALUES (
+            (i % 1000) + 1, -- IDCliente aleatorio entre 1 y 1000
+            'TipoCuenta' || i::text,
+            'Moneda' || i::text,
+            i * 100.50, -- SaldoActual incrementado por cada registro
+            '2000-01-01'::DATE + (i || ' days')::INTERVAL, -- FechaApertura incrementada por cada registro
+            CASE WHEN i % 2 = 0 THEN 'Activo' ELSE 'Inactivo' END
+        );
+        i := i + 1;
+    END LOOP;
+END $$;
+
+
+--sCRIPT TRANSACCION --
+DO $$
+DECLARE
+    i INT := 1;
+BEGIN
+    WHILE i <= 1000 LOOP
+        INSERT INTO Transaccion (TipoTransaccion, IDCuentaOrigen, IDCuentaDestino, Monto, Moneda, Descripcion, FechaHora, SaldoPosteriorOrigen, SaldoPosteriorDestino)
+        VALUES (
+            'TipoTransaccion' || i::text,
+            (i % 1000) + 1, -- IDCuentaOrigen aleatorio entre 1 y 1000
+            ((i + 1) % 1000) + 1, -- IDCuentaDestino aleatorio entre 1 y 1000 (distinto a IDCuentaOrigen)
+            i * 50.75, -- Monto incrementado por cada registro
+            'Moneda' || i::text,
+            'Descripción' || i::text,
+            CURRENT_TIMESTAMP - (i || ' days')::INTERVAL, -- FechaHora retrocedida por cada registro
+            (i - 1) * 100.50, -- SaldoPosteriorOrigen incrementado por cada registro
+            (i + 1) * 100.50 -- SaldoPosteriorDestino incrementado por cada registro
+        );
+        i := i + 1;
+    END LOOP;
+END $$;
+
+
+-- SRCIPT TRANSFERENCIA- 
+DO $$
+DECLARE
+    i INT := 1;
+BEGIN
+    WHILE i <= 1000 LOOP
+        INSERT INTO Transferencia (IDClienteOrigen, IDClienteDestino, IDCuentaOrigen, IDCuentaDestino, Monto, Moneda, Descripcion, FechaHora)
+        VALUES (
+            (i % 1000) + 1, -- IDClienteOrigen aleatorio entre 1 y 1000
+            ((i + 1) % 1000) + 1, -- IDClienteDestino aleatorio entre 1 y 1000 (distinto a IDClienteOrigen)
+            (i % 1000) + 1, -- IDCuentaOrigen aleatorio entre 1 y 1000
+            ((i + 1) % 1000) + 1, -- IDCuentaDestino aleatorio entre 1 y 1000 (distinto a IDCuentaOrigen)
+            i * 75.25, -- Monto incrementado por cada registro
+            'Moneda' || i::text,
+            'Descripción' || i::text,
+            CURRENT_TIMESTAMP - (i || ' days')::INTERVAL -- FechaHora retrocedida por cada registro
+        );
+        i := i + 1;
+    END LOOP;
+END $$;

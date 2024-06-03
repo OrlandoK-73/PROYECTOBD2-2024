@@ -1,0 +1,70 @@
+version: "3.9"
+services:
+  db-master:
+    image: postgres:latest
+    container_name: banco_db_master
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: banco
+      POSTGRES_REPLICATION_USER: replicator
+      POSTGRES_REPLICATION_PASSWORD: replica123
+    volumes:
+      - ./master/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./master/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - banco-network
+
+  db-replica:
+    image: postgres:latest
+    container_name: banco_db_replica
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: banco
+      POSTGRES_REPLICATION_USER: replicator
+      POSTGRES_REPLICATION_PASSWORD: replica123
+    volumes:
+      - ./replica/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./replica/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./replica/init_replica.sh:/docker-entrypoint-initdb.d/init_replica.sh
+    ports:
+      - "5433:5432"
+    networks:
+      - banco-network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    networks:
+      - banco-network
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - banco-network
+  
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    ports:
+      - 9187:9187
+    environment:
+      DATA_SOURCE_NAME: "postgresql://admin:admin123@db-master:5432/banco?sslmode=disable"
+    depends_on:
+      - db-master
+      - prometheus
+    networks:
+      - banco-network
+
+networks:
+  banco-network:
+    driver: bridge

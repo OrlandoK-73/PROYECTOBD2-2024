@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  web:
+    image: [imagen_de_tu_pagina_web]
+    container_name: banco_web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/var/www/html
+    depends_on:
+      - db-master
+    networks:
+      - postgres-network
+
+  db-master:
+    image: postgres:13
+    container_name: banco_db_master
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: banco
+      POSTGRES_REPLICATION_USER: replicator
+      POSTGRES_REPLICATION_PASSWORD: replica123
+    volumes:
+      - ./database/master:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./database/master/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./database/master/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres-network
+
+  db-replica:
+    image: postgres:13
+    container_name: banco_db_replica
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: banco
+      POSTGRES_REPLICATION_USER: replicator
+      POSTGRES_REPLICATION_PASSWORD: replica123
+      POSTGRES_MASTER_HOST: db-master
+    volumes:
+      - ./database/replica:/var/lib/postgresql/data
+      - ./database/replica/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./database/replica/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    ports:
+      - "5433:5432"
+    depends_on:
+      - db-master
+    networks:
+      - postgres-network
+    command: ["bash", "-c", "rm -rf /var/lib/postgresql/data/* && /docker-entrypoint.sh postgres"]
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./database/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - postgres-network
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    container_name: postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://admin:admin123@db-master:5432/banco?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - postgres-network
+    depends_on:
+      - db-master
+
+networks:
+  postgres-network:
+    driver: bridge
